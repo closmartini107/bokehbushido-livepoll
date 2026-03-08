@@ -316,12 +316,28 @@ function getScriptUrl() {
   return url;
 }
 
-async function call(params) {
+async function call(params, timeoutMs = 35000) {
   const base = getScriptUrl();
   if (!base) return null;
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`${base}?${qs}`);
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${base}?${qs}`, { signal: controller.signal });
+    clearTimeout(timer);
+    return res.json();
+  } catch(err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') return { error: 'Timed out after 35s. Apps Script may still be running — wait 30s then check if the poll launched by refreshing.' };
+    return { error: err.toString() };
+  }
+}
+
+function animateBtn(btn, active) {
+  if (!active) { btn.textContent = '▶ Launch Poll'; clearInterval(btn._anim); return; }
+  const frames = ['Connecting .', 'Connecting ..', 'Finding stream...', 'Almost there...'];
+  let i = 0;
+  btn._anim = setInterval(() => { btn.textContent = frames[i++ % frames.length]; }, 600);
 }
 
 async function launchPoll() {
@@ -331,20 +347,24 @@ async function launchPoll() {
   const optC = document.getElementById('optC').value.trim();
   const optD = document.getElementById('optD').value.trim();
 
-  if (!q)              return showToast('Please enter a question!', 'err');
+  if (!q) return showToast('Please enter a question!', 'err');
   const filled = [optA,optB,optC,optD].filter(Boolean);
   if (filled.length < 2) return showToast('Fill in at least 2 options!', 'err');
 
-  document.getElementById('launchBtn').disabled = true;
-  showToast('Launching poll — finding your live stream…');
+  const btn = document.getElementById('launchBtn');
+  btn.disabled = true;
+  animateBtn(btn, true);
+  showToast('Connecting to your live stream — may take up to 30s…');
 
   const data = await call({ action:'launchPoll', question:q, optA, optB, optC, optD });
-  document.getElementById('launchBtn').disabled = false;
+
+  animateBtn(btn, false);
+  btn.disabled = false;
 
   if (!data) return;
-  if (data.error) return showToast('Error: ' + data.error, 'err');
+  if (data.error) return showToast('❌ ' + data.error, 'err');
 
-  showToast('Poll live! 🎉', 'ok');
+  showToast('✅ Poll is live!', 'ok');
   document.getElementById('closeBtn').style.display = 'inline-block';
   document.getElementById('resultsCard').style.display = 'block';
   document.getElementById('qDisplay').textContent = q;
