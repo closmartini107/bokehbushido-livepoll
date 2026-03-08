@@ -305,6 +305,7 @@ textarea { resize: vertical; width: 100%; }
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="jsonp-container"></div>
 
 <script>
 let pollInterval = null;
@@ -320,17 +321,34 @@ async function call(params, timeoutMs = 35000) {
   const base = getScriptUrl();
   if (!base) return null;
   const qs = new URLSearchParams(params).toString();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(`${base}?${qs}`, { signal: controller.signal });
-    clearTimeout(timer);
-    return res.json();
-  } catch(err) {
-    clearTimeout(timer);
-    if (err.name === 'AbortError') return { error: 'Timed out after 35s. Apps Script may still be running — wait 30s then check if the poll launched by refreshing.' };
-    return { error: err.toString() };
-  }
+  const url = `${base}?${qs}`;
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      resolve({ error: 'Timed out after 35s. Apps Script may still be running — wait 30s then refresh to check.' });
+    }, timeoutMs);
+
+    // Use JSONP to avoid CORS — Apps Script supports this natively
+    const cbName = 'cb_' + Date.now();
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      document.getElementById('jsonp-container').removeChild(
+        document.querySelector(`script[data-cb="${cbName}"]`)
+      );
+      resolve(data);
+    };
+
+    const script = document.createElement('script');
+    script.src = `${url}&callback=${cbName}`;
+    script.dataset.cb = cbName;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      resolve({ error: 'Network error. Check your Apps Script URL is correct and deployed as Anyone.' });
+    };
+    document.getElementById('jsonp-container').appendChild(script);
+  });
 }
 
 function animateBtn(btn, active) {
