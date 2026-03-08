@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BokehBushido — Poll Host</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap');
+
+:root {
+  --bg:      #0c0c14;
+  --surface: #13131e;
+  --border:  #22223a;
+  --accent:  #e8b84b;
+  --red:     #ff4466;
+  --green:   #3dffa0;
+  --text:    #eeeeff;
+  --muted:   #6666aa;
+  --a: #ff4466; --b: #3db8ff; --c: #3dffa0; --d: #ffd84b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wrap { width: 100%; max-width: 700px; }
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.8rem;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+.logo span { color: var(--muted); font-size: 1rem; letter-spacing: 1px; }
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(232,184,75,0.1);
+  border: 1px solid rgba(232,184,75,0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.2} }
+
+/* Banner */
+.banner {
+  background: linear-gradient(135deg, rgba(232,184,75,0.08), rgba(232,184,75,0.02));
+  border: 1px solid rgba(232,184,75,0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.banner strong { color: var(--accent); }
+
+/* Script URL input */
+.url-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.url-row { display: flex; gap: 10px; }
+input[type=text], textarea {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border .2s;
+}
+input[type=text]:focus, textarea:focus {
+  border-color: rgba(232,184,75,0.5);
+}
+textarea { resize: vertical; width: 100%; }
+
+/* Poll builder */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 18px;
+}
+.opts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.opt-row { display: flex; align-items: center; gap: 10px; }
+.badge {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.9rem; flex-shrink: 0;
+}
+.ba { background: rgba(255,68,102,.15); color: var(--a); }
+.bb { background: rgba(61,184,255,.15); color: var(--b); }
+.bc { background: rgba(61,255,160,.15); color: var(--c); }
+.bd { background: rgba(255,216,75,.15); color: var(--d); }
+
+/* Buttons */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.btn {
+  padding: 11px 22px;
+  border-radius: 9px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .18s;
+  letter-spacing: .5px;
+}
+.btn-launch {
+  background: linear-gradient(135deg, var(--accent), #c8942b);
+  color: #0c0c14;
+  box-shadow: 0 4px 18px rgba(232,184,75,.3);
+}
+.btn-launch:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(232,184,75,.45); }
+.btn-launch:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.btn-close {
+  background: rgba(255,68,102,.1);
+  border: 1px solid rgba(255,68,102,.25);
+  color: var(--red);
+}
+.btn-close:hover { background: rgba(255,68,102,.2); }
+.btn-reset {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Live results */
+.results-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 18px;
+  display: none;
+}
+.q-display {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+.bar-item { margin-bottom: 14px; }
+.bar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.bar-label { display: flex; align-items: center; gap: 9px; font-size: .9rem; font-weight: 600; }
+.bar-pct { font-family: 'Bebas Neue', cursive; font-size: 1.4rem; letter-spacing: 1px; }
+.track {
+  width: 100%; height: 11px;
+  background: rgba(255,255,255,.05);
+  border-radius: 6px; overflow: hidden;
+}
+.fill {
+  height: 100%; border-radius: 6px; width: 0%;
+  transition: width .6s cubic-bezier(.34,1.56,.64,1);
+}
+.fill-a { background: linear-gradient(90deg,rgba(255,68,102,.5),var(--a)); }
+.fill-b { background: linear-gradient(90deg,rgba(61,184,255,.5),var(--b)); }
+.fill-c { background: linear-gradient(90deg,rgba(61,255,160,.5),var(--c)); }
+.fill-d { background: linear-gradient(90deg,rgba(255,216,75,.5),var(--d)); }
+.pct-a{color:var(--a)} .pct-b{color:var(--b)} .pct-c{color:var(--c)} .pct-d{color:var(--d)}
+
+.stats-row {
+  display: flex; gap: 14px; align-items: center;
+  flex-wrap: wrap; margin-top: 18px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.chip {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 13px;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.chip span { color: var(--text); font-weight: 700; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-size: .88rem;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  z-index: 99;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+.toast.err { border-color: var(--red); color: var(--red); }
+.toast.ok  { border-color: var(--green); color: var(--green); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo">LivePoll <span>/ Host</span></div>
+    <div class="status-pill"><div class="dot"></div> @bokehbushido</div>
+  </div>
+
+  <!-- Step 1: Script URL -->
+  <div class="url-card">
+    <div class="label">Step 1 — Paste your Google Apps Script Web App URL</div>
+    <div class="url-row">
+      <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/.../exec" />
+    </div>
+    <div style="margin-top:10px;font-size:.8rem;color:var(--muted);">
+      Get this from: Google Apps Script → Deploy → Manage Deployments → copy the Web App URL
+    </div>
+  </div>
+
+  <!-- Poll builder -->
+  <div class="card">
+    <div class="label">Step 2 — Build your poll</div>
+    <textarea id="question" rows="2" placeholder="Ask your audience something... e.g. What's your favorite lens focal length?" style="margin-top:8px;"></textarea>
+    <div class="opts-grid">
+      <div class="opt-row"><div class="badge ba">A</div><input type="text" id="optA" placeholder="Option A"></div>
+      <div class="opt-row"><div class="badge bb">B</div><input type="text" id="optB" placeholder="Option B"></div>
+      <div class="opt-row"><div class="badge bc">C</div><input type="text" id="optC" placeholder="Option C"></div>
+      <div class="opt-row"><div class="badge bd">D</div><input type="text" id="optD" placeholder="Option D"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-launch" id="launchBtn" onclick="launchPoll()">▶ Launch Poll</button>
+      <button class="btn btn-close"  id="closeBtn"  onclick="closePoll()" style="display:none">🔒 Close Poll</button>
+      <button class="btn btn-reset"                 onclick="resetPoll()">↺ Reset</button>
+    </div>
+  </div>
+
+  <!-- Live results -->
+  <div class="results-card" id="resultsCard">
+    <div class="label">Live Results <span id="pollStatusLabel" style="color:var(--green);margin-left:8px;">● Open</span></div>
+    <div class="q-display" id="qDisplay"></div>
+    <div id="bars"></div>
+    <div class="stats-row">
+      <div class="chip">Total Votes: <span id="totalVotes">0</span></div>
+      <div class="chip">Status: <span id="statusText">Open</span></div>
+      <div class="chip" style="margin-left:auto;font-size:.75rem;color:var(--muted)">Auto-refreshes every 5s</div>
+    </div>
+  </div>
+
+  <div class="banner">
+    💡 <strong>How it works:</strong> Tell your audience to type <strong>A</strong>, <strong>B</strong>, <strong>C</strong>, or <strong>D</strong> in the YouTube chat.
+    Votes are counted automatically — one per viewer. Open <strong>overlay.html</strong> in Ecamm Live as a Browser Source for the full-screen display.
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let pollInterval = null;
+let currentState = null;
+
+function getScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url) { showToast('Please paste your Apps Script URL first!', 'err'); return null; }
+  return url;
+}
+
+async function call(params) {
+  const base = getScriptUrl();
+  if (!base) return null;
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${base}?${qs}`);
+  return res.json();
+}
+
+async function launchPoll() {
+  const q    = document.getElementById('question').value.trim();
+  const optA = document.getElementById('optA').value.trim();
+  const optB = document.getElementById('optB').value.trim();
+  const optC = document.getElementById('optC').value.trim();
+  const optD = document.getElementById('optD').value.trim();
+
+  if (!q)              return showToast('Please enter a question!', 'err');
+  const filled = [optA,optB,optC,optD].filter(Boolean);
+  if (filled.length < 2) return showToast('Fill in at least 2 options!', 'err');
+
+  document.getElementById('launchBtn').disabled = true;
+  showToast('Launching poll — finding your live stream…');
+
+  const data = await call({ action:'launchPoll', question:q, optA, optB, optC, optD });
+  document.getElementById('launchBtn').disabled = false;
+
+  if (!data) return;
+  if (data.error) return showToast('Error: ' + data.error, 'err');
+
+  showToast('Poll live! 🎉', 'ok');
+  document.getElementById('closeBtn').style.display = 'inline-block';
+  document.getElementById('resultsCard').style.display = 'block';
+  document.getElementById('qDisplay').textContent = q;
+  startPolling();
+}
+
+async function closePoll() {
+  const data = await call({ action:'closePoll' });
+  if (data?.success) {
+    showToast('Poll closed.', 'ok');
+    document.getElementById('pollStatusLabel').textContent = '● Closed';
+    document.getElementById('pollStatusLabel').style.color = 'var(--red)';
+    document.getElementById('statusText').textContent = 'Closed';
+    document.getElementById('closeBtn').style.display = 'none';
+  }
+}
+
+async function resetPoll() {
+  await call({ action:'resetPoll' });
+  stopPolling();
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('closeBtn').style.display = 'none';
+  document.getElementById('bars').innerHTML = '';
+  showToast('Poll reset.', 'ok');
+}
+
+function startPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  fetchState();
+  pollInterval = setInterval(fetchState, 5000);
+}
+
+function stopPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = null;
+}
+
+async function fetchState() {
+  const base = document.getElementById('scriptUrl').value.trim();
+  if (!base) return;
+  try {
+    const res  = await fetch(`${base}?action=getState`);
+    const data = await res.json();
+    currentState = data;
+    renderBars(data);
+    document.getElementById('totalVotes').textContent =
+      (data.votes.a||0)+(data.votes.b||0)+(data.votes.c||0)+(data.votes.d||0);
+  } catch(e) {}
+}
+
+function renderBars(s) {
+  const opts  = ['a','b','c','d'].filter(l => s.options[l]);
+  const total = opts.reduce((sum,l) => sum + (s.votes[l]||0), 0);
+  const maxV  = Math.max(...opts.map(l => s.votes[l]||0));
+  const closed = !s.open;
+
+  document.getElementById('bars').innerHTML = opts.map(l => {
+    const pct     = total > 0 ? Math.round(((s.votes[l]||0)/total)*100) : 0;
+    const winner  = closed && (s.votes[l]||0) === maxV && maxV > 0;
+    return `
+      <div class="bar-item">
+        <div class="bar-meta">
+          <div class="bar-label">
+            <div class="badge b${l}">${l.toUpperCase()}</div>
+            ${s.options[l]}${winner?' 👑':''}
+          </div>
+          <div class="bar-pct pct-${l}">${pct}%</div>
+        </div>
+        <div class="track"><div class="fill fill-${l}" id="hbar-${l}"></div></div>
+      </div>`;
+  }).join('');
+
+  // Animate after paint
+  setTimeout(() => {
+    opts.forEach(l => {
+      const pct = total > 0 ? Math.round(((s.votes[l]||0)/total)*100) : 0;
+      const el  = document.getElementById(`hbar-${l}`);
+      if (el) el.style.width = pct + '%';
+    });
+  }, 60);
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show' + (type ? ' '+type : '');
+  setTimeout(() => t.className = 'toast', 3500);
+}
+</script>
+</body>
+</html>
